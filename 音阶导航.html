@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>Document</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+    }
+
+    ul {
+      list-style: none;
+      width: 800px;
+      border: 1px solid #000;
+      margin: 100px auto;
+      display: flex;
+      overflow: hidden;
+    }
+
+    ul>li {
+      width: 100px;
+      height: 38px;
+    }
+
+    ul>li+li {
+      border-left: 1px solid #000;
+    }
+
+    ul>li>a {
+      display: block;
+      font-size: 20px;
+      color: black;
+      text-decoration: none;
+      line-height: 38px;
+      text-align: center;
+    }
+
+    ul>li>.cover {
+      height: 100%;
+      background-color: pink;
+      transition: all .5s;
+    }
+
+    ul>li:hover .cover {
+      transform: translateY(-38px);
+    }
+  </style>
+</head>
+
+<body>
+  <audio></audio>
+  <nav>
+    <ul>
+      <li data-flag="a">
+        <a href="javascript:;">多</a>
+        <div class="cover"></div>
+      </li>
+      <li>
+        <a href="javascript:;">a</a>
+        <div class="cover"></div>
+      </li>
+      <li data-flag="b">
+        <a href="javascript:;">儒爱</a>
+        <div class="cover"></div>
+      </li>
+      <li>
+        <a href="javascript:;">b</a>
+        <div class="cover"></div>
+      </li>
+      <li data-flag="c">
+        <a href="javascript:;">咪</a>
+        <div class="cover"></div>
+      </li>
+      <li>
+        <a href="javascript:;">c</a>
+        <div class="cover"></div>
+      </li>
+      <li data-flag="d">
+        <a href="javascript:;">发</a>
+        <div class="cover"></div>
+      </li>
+      <li>
+        <a href="javascript:;">d</a>
+        <div class="cover"></div>
+      </li>
+    </ul>
+  </nav>
+
+  <script>
+    var audio = document.querySelector('audio')
+    var lis = document.querySelectorAll('nav li')
+    for (var i = 0; i < lis.length; i++) {
+      lis[i].addEventListener('mouseenter', function () {
+        var flag = this.dataset.flag
+        if (flag) {
+          audio.src = 'http://s8.qhimg.com/share/audio/piano1/' + flag + '4.mp3'
+          audio.play()
+        }
+      })
+    }
+  </script>
+</body>
+
+</html>

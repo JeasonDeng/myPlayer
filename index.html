@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>Document</title>
+  <link rel="stylesheet" href="player.css">
+</head>
+
+<body>
+  <div class="player">
+    <video src="https://blz-videos.nosdn.127.net/1/OverWatch/AnimatedShots/Overwatch_AnimatedShot_Soldier76_Hero.mp4"
+      preload="metadata"></video>
+    <div class="control">
+      <div class="btns">
+        <span class="icon-pause"></span>
+        <span class="icon-stop"></span>
+      </div>
+      <div class="progress">
+        <div class="upper-line">
+          <div class="bar"></div>
+        </div>
+        <div class="base-line">
+        </div>
+      </div>
+      <div class="others">
+        <span class="time">00:00:00/00:00:00</span>
+        <div class="sound">
+          <span class="icon-vol"></span>
+          <div class="sound-progress">
+            <div class="line">
+              <div class="bar"></div>
+            </div>
+            <div class="base-line"></div>
+          </div>
+        </div>
+        <span class="icon-full-screen"></span>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/drag.js"></script>
+  <script>
+    var video = document.querySelector('video')
+    var control = document.querySelector('.player .control')
+    var bar = document.querySelector('.player .control .progress .bar')
+    var volBar = document.querySelector('.sound-progress .line .bar')
+    var iconPause = document.querySelector('.player .control span.icon-pause')
+    var iconStop = document.querySelector('.player .control span.icon-stop')
+    var iconVol = document.querySelector('.player .control span.icon-vol')
+    var iconFullScreen = document.querySelector('.player .control span.icon-full-screen')
+    var soundProgress = document.querySelector('.player .control .sound-progress')
+    var time = document.querySelector('.player .control .time')
+    var progress = document.querySelector('.player .control .progress')
+    var progressLength = progress.clientWidth
+    var soundProgressLength = soundProgress.clientWidth
+    var volProgressLength = document.querySelector('.player .control .sound-progress').clientWidth
+
+    var timer = 0
+    var volScale = 1
+    var isFullScreen = false
+
+    video.width = document.documentElement.clientWidth
+    video.height = document.documentElement.clientHeight - control.offsetHeight
+    window.onresize = function (e) {
+      if (document.documentElement.clientWidth >= 600) {
+        video.width = document.documentElement.clientWidth
+        video.height = document.documentElement.clientHeight - control.offsetHeight
+      }
+    }
+
+    // 拖拽进度条
+    $.drag(bar, function () {
+      bar.parentNode.style.width = bar.offsetLeft + 'px'
+      video.currentTime = bar.offsetLeft / (progressLength - bar.clientWidth) * video.duration
+      if (bar.offsetLeft >= progressLength - bar.clientWidth) {
+        iconPause.classList.remove('play')
+        video.pause()
+        clearInterval(timer)
+      } else {
+        iconPause.classList.add('play')
+        // 解决 Uncaught (in promise) DOMException 问题
+        var playPromise = video.play()
+        if (playPromise !== undefined) {
+          playPromise.then(() => {
+            video.play()
+          }).catch(() => {
+          })
+        }
+        timer = setInterval(function () {
+          move()
+          setTime()
+        }, 100)
+      }
+    })
+
+    // 拖拽声音进度
+    $.drag(volBar, function () {
+      volBar.parentNode.style.width = volBar.offsetLeft + 'px'
+      volScale = volBar.offsetLeft / (soundProgressLength - volBar.offsetWidth)
+      if (volScale === 0) {
+        iconVol.classList.add('play')
+        video.muted = true
+      } else {
+        iconVol.classList.remove('play')
+        video.muted = false
+      }
+      video.volume = volScale
+    })
+
+
+    player()
+    function player() {
+      // 初始化音量
+      video.muted = false
+      video.volume = 1
+      volBar.style.left = volBar.parentNode.style.width = soundProgressLength - volBar.offsetWidth + 'px'
+
+      // 播放暂停
+      iconPause.onclick = function () {
+        if (video.paused) {
+          this.classList.add('play')
+          video.play()
+          timer = setInterval(function () {
+            move()
+            setTime()
+          }, 100)
+        } else {
+          this.classList.remove('play')
+          video.pause()
+          clearInterval(timer)
+        }
+      }
+
+      // 停止播放
+      iconStop.onclick = function () {
+        video.currentTime = 0
+        bar.style.left = bar.parentNode.style.width = '0px'
+        iconPause.classList.remove('play')
+        video.pause()
+        clearInterval(timer)
+      }
+
+      // 按下空格
+      document.onkeydown = function (e) {
+        if (!video.paused) {
+          if (e.keyCode === 32) {
+            iconPause.classList.remove('play')
+            video.pause()
+            clearInterval(timer)
+          }
+        } else {
+          if (e.keyCode === 32) {
+            iconPause.classList.add('play')
+            video.play()
+            timer = setInterval(function () {
+              move()
+              setTime()
+            }, 100)
+          }
+        }
+      }
+
+      // 点击进度条
+      progress.onclick = function (e) {
+        e = e || event
+        var clickPos = e.clientX - this.offsetLeft
+        video.currentTime = clickPos / (progressLength - bar.clientWidth) * video.duration
+        iconPause.classList.add('play')
+        video.play()
+        setInterval(function () {
+          move()
+          setTime()
+        }, 100)
+      }
+
+      // 点击音量图标
+      iconVol.onclick = function () {
+        if (video.muted) {
+          this.classList.remove('play')
+          video.muted = false
+          if (volScale === 0) {
+            volScale = 1
+          }
+          video.volume = volScale
+          volBar.style.left = volBar.parentNode.style.width = volScale * (soundProgressLength - volBar.offsetWidth) + 'px'
+        } else {
+          this.classList.add('play')
+          video.muted = true
+          video.volume = 0
+          volBar.style.left = volBar.parentNode.style.width = '0px'
+        }
+      }
+
+      // 全屏
+      iconFullScreen.onclick = function () {
+        if (isFullScreen) {
+          isFullScreen = false
+          this.classList.remove('play')
+          if (document.exitFullscreen) {
+            document.exitFullscreen();
+          }
+          else if (document.mozCancelFullScreen) {
+            document.mozCancelFullScreen();
+          }
+          else if (document.webkitCancelFullScreen) {
+            document.webkitCancelFullScreen();
+          }
+          else if (document.msExitFullscreen) {
+            document.msExitFullscreen();
+          }
+        } else {
+          isFullScreen = true
+          this.classList.add('play')
+          var docElm = document.documentElement;
+          //W3C  
+          if (docElm.requestFullscreen) {
+            docElm.requestFullscreen();
+          }
+          //FireFox  
+          else if (docElm.mozRequestFullScreen) {
+            docElm.mozRequestFullScreen();
+          }
+          //Chrome等  
+          else if (docElm.webkitRequestFullScreen) {
+            docElm.webkitRequestFullScreen();
+          }
+          //IE11
+          else if (docElm.msRequestFullscreen) {
+            docElm.msRequestFullscreen();
+          }
+        }
+      }
+    }
+
+    function move() {
+      var position = video.currentTime / video.duration * (progressLength - bar.clientWidth)
+      if (position >= progressLength - bar.clientWidth) {
+        position = progressLength - bar.clientWidth
+        iconPause.classList.remove('play')
+        video.pause()
+        clearInterval(timer)
+      }
+      bar.style.left = bar.parentNode.style.width = position + 'px'
+    }
+
+    // 设置时间
+    function setTime() {
+      // 设置当前时间
+      var currentH = Math.floor(video.currentTime / 3600)
+      var currentM = Math.floor(video.currentTime % 3600 / 60)
+      var currentS = Math.floor(video.currentTime % 60)
+      currentH = currentH > 9 ? currentH : '0' + currentH
+      currentM = currentM > 9 ? currentM : '0' + currentM
+      currentS = currentS > 9 ? currentS : '0' + currentS
+
+      var totalH = Math.floor(video.duration / 3600)
+      var totalM = Math.floor(video.duration % 3600 / 60)
+      var totalS = Math.floor(video.duration % 60)
+      totalH = totalH > 9 ? totalH : '0' + totalH
+      totalM = totalM > 9 ? totalM : '0' + totalM
+      totalS = totalS > 9 ? totalS : '0' + totalS
+
+      time.innerHTML = currentH + ':' + currentM + ':' + currentS + '/' + totalH + ':' + totalM + ':' + totalS
+    }
+  </script>
+</body>
+
+</html>
